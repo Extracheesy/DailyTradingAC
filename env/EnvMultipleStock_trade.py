@@ -23,7 +23,8 @@ STOCK_DIM = 23
 SHAPE_SIZE = 1 + STOCK_DIM * 6
 
 # transaction fee: 1/1000 reasonable percentage
-TRANSACTION_FEE_PERCENT = 0.001
+# TRANSACTION_FEE_PERCENT = 0.001
+TRANSACTION_FEE_PERCENT = 0.0
 
 # turbulence index: 90-150 reasonable threshold
 #TURBULENCE_THRESHOLD = 140
@@ -88,13 +89,13 @@ class StockEnvTrade(gym.Env):
                  TRANSACTION_FEE_PERCENT
                 self.trades+=1
                 # CD Tracing with dataframe
-                df_sell_row = pd.DataFrame(data = np.array([[self.data.datadate.values[0], self.data.tic.values[index] , self.iteration , "sell"      ,  "0"  , self.state[index+1] ,  min(abs(action), self.state[index+STOCK_DIM+1]) , self.cost    ]]), columns= ['datadate'                  , 'tic'                , 'iter_num'     , 'action_performed' , 'available_amount' , 'stock_value'       ,  'nb_stock_traded'             , 'trade_cost'  ]) 
+                #df_sell_row = pd.DataFrame(data = np.array([[self.data.datadate.values[0], self.data.tic.values[index] , self.iteration , "sell"      ,  "0"  , self.state[index+1] ,  min(abs(action), self.state[index+STOCK_DIM+1]) , self.cost    ]]), columns= ['datadate'                  , 'tic'                , 'iter_num'     , 'action_performed' , 'available_amount' , 'stock_value'       ,  'nb_stock_traded'             , 'trade_cost'  ])
                 # self.df_trace.insert_row_to_stock_daily_trading_step(df_sell_row)
             else:
                 # if turbulence goes over threshold, just stop buying
                 # CD Tracing with dataframe         
 
-                df_step_row = pd.DataFrame(data = np.array([[self.data.datadate.values[0], self.data.tic.values[index] , self.iteration , "step_sell" ,  "0"  , self.state[index+1] ,  "0"                                              , self.cost    ]]), columns= ['datadate'                  , 'tic'                , 'iter_num'     , 'action_performed' , 'available_amount' , 'stock_value'       ,  'nb_stock_traded'             , 'trade_cost'  ]) 
+                #df_step_row = pd.DataFrame(data = np.array([[self.data.datadate.values[0], self.data.tic.values[index] , self.iteration , "step_sell" ,  "0"  , self.state[index+1] ,  "0"                                              , self.cost    ]]), columns= ['datadate'                  , 'tic'                , 'iter_num'     , 'action_performed' , 'available_amount' , 'stock_value'       ,  'nb_stock_traded'             , 'trade_cost'  ])
                 # self.df_trace.insert_row_to_stock_daily_trading_step(df_step_row)
                 pass
         else:
@@ -135,13 +136,13 @@ class StockEnvTrade(gym.Env):
             self.trades+=1
             
             # CD Tracing with dataframe
-            df_buy_row = pd.DataFrame(data = np.array([[self.data.datadate.values[0], self.data.tic.values[index] , self.iteration , "buy"              ,  available_amount  , self.state[index+1] ,  min(available_amount, action) , self.cost    ]]), columns= ['datadate'                  , 'tic'                , 'iter_num'     , 'action_performed' , 'available_amount' , 'stock_value'       ,  'nb_stock_traded'             , 'trade_cost'  ]) 
+            #df_buy_row = pd.DataFrame(data = np.array([[self.data.datadate.values[0], self.data.tic.values[index] , self.iteration , "buy"              ,  available_amount  , self.state[index+1] ,  min(available_amount, action) , self.cost    ]]), columns= ['datadate'                  , 'tic'                , 'iter_num'     , 'action_performed' , 'available_amount' , 'stock_value'       ,  'nb_stock_traded'             , 'trade_cost'  ])
             # self.df_trace.insert_row_to_stock_daily_trading_step(df_buy_row)
            
         else:
             # if turbulence goes over threshold, just stop buying
             # CD Tracing with dataframe
-            df_step_row = pd.DataFrame(data = np.array([[self.data.datadate.values[0], self.data.tic.values[index] , self.iteration , "step_buy"        ,  "0"                  , self.state[index+1] ,  "0"                            , self.cost    ]]), columns= ['datadate'                  , 'tic'                , 'iter_num'     , 'action_performed' , 'available_amount' , 'stock_value'       ,  'nb_stock_traded'             , 'trade_cost'  ]) 
+            #df_step_row = pd.DataFrame(data = np.array([[self.data.datadate.values[0], self.data.tic.values[index] , self.iteration , "step_buy"        ,  "0"                  , self.state[index+1] ,  "0"                            , self.cost    ]]), columns= ['datadate'                  , 'tic'                , 'iter_num'     , 'action_performed' , 'available_amount' , 'stock_value'       ,  'nb_stock_traded'             , 'trade_cost'  ])
             # self.df_trace.insert_row_to_stock_daily_trading_step(df_step_row)
             
             pass
@@ -162,10 +163,18 @@ class StockEnvTrade(gym.Env):
             df_total_value = pd.DataFrame(self.asset_memory)
             
             #if(self.df_trace.trace_mode == "LOG"):
-            #    df_total_value.to_csv('results/account_value_trade_{}_{}.csv'.format(self.model_name, self.iteration))
+            df_total_value.to_csv('model_saved/results/account_value_trade_{}_{}.csv'.format(self.model_name, self.day_date))
             
             end_total_asset = self.state[0]+ sum(np.array(self.state[1:(STOCK_DIM+1)])*np.array(self.state[(STOCK_DIM+1):(STOCK_DIM*2+1)]))
-            total_reward = self.state[0]+sum(np.array(self.state[1:(STOCK_DIM+1)])*np.array(self.state[(STOCK_DIM+1):(STOCK_DIM*2+1)]))- self.asset_memory[0]  
+            total_reward = self.state[0]+sum(np.array(self.state[1:(STOCK_DIM+1)])*np.array(self.state[(STOCK_DIM+1):(STOCK_DIM*2+1)]))- self.asset_memory[0]
+
+
+            # CD Add Test Debug
+            self.asset_memory.append(end_total_asset)
+            self.reward = total_reward
+            self.rewards_memory.append(self.reward)
+            # CD Add Test Debug
+
 
             df_total_value.columns = ['account_value']
             df_total_value['daily_return']=df_total_value.pct_change(1)
@@ -196,7 +205,7 @@ class StockEnvTrade(gym.Env):
             #df_new_row = pd.DataFrame(data = np.array([[self.data.datadate.values[0], self.iteration, self.asset_memory[0], end_total_asset, total_reward, self.cost, self.trades, sharpe ]]), columns=['datadate','iter_num','previous_total_asset','end_total_asset','total_reward','total_cost','total_trade','sharpe'])
             #self.df_trace.insert_row_to_terminal_state(df_new_row)
             
-            return self.state, self.reward, self.terminal,{}
+            return self.state, self.reward, self.terminal, {}
 
         else:
             # print("np.array(self.state[1:29]) -> ",np.array(self.state[1:29]))
@@ -205,7 +214,16 @@ class StockEnvTrade(gym.Env):
             #actions = (actions.astype(int))
             if self.turbulence>=self.turbulence_threshold:
                 actions=np.array([-HMAX_NORMALIZE]*STOCK_DIM)
-                
+
+            # DEBUG CD
+            toto_debug = self.state[0]
+            titi_debug = self.state[1:(STOCK_DIM+1)]
+            tutu_debug = np.array(self.state[1:(STOCK_DIM+1)])
+            tata_debug = self.state[(STOCK_DIM+1):(STOCK_DIM*2+1)]
+            tete_debug = np.array(self.state[(STOCK_DIM+1):(STOCK_DIM*2+1)])
+            titi_2_debug = np.array(self.state[1:(STOCK_DIM+1)])*np.array(self.state[(STOCK_DIM+1):(STOCK_DIM*2+1)])
+            tata_2_debug = sum(np.array(self.state[1:(STOCK_DIM+1)])*np.array(self.state[(STOCK_DIM+1):(STOCK_DIM*2+1)]))
+
             begin_total_asset = self.state[0]+ \
             sum(np.array(self.state[1:(STOCK_DIM+1)])*np.array(self.state[(STOCK_DIM+1):(STOCK_DIM*2+1)]))
             
@@ -265,6 +283,8 @@ class StockEnvTrade(gym.Env):
             self.reward = self.reward*REWARD_SCALING
 
         return self.state, self.reward, self.terminal, {}
+        # return self.state, self.reward, self.terminal, {} , end_total_asset
+        # return self.state, self.reward, end_total_asset, {}
 
     def reset(self):  
         if self.initial:

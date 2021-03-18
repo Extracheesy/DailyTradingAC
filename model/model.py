@@ -1,4 +1,7 @@
 import time, os, sys
+import pandas as pd
+import numpy as np
+
 from stable_baselines import A2C
 from stable_baselines import PPO2
 from stable_baselines import SAC
@@ -166,7 +169,30 @@ def read_model(model_type):
 
     return model
 
-def trade_data(df_data_day, model):
+def addRow(df,ls):
+    """
+    Given a dataframe and a list, append the list as a new row to the dataframe.
+
+    :param df: <DataFrame> The original dataframe
+    :param ls: <list> The new row to be added
+    :return: <DataFrame> The dataframe with the newly appended row
+    """
+
+    numEl = len(ls)
+
+    newRow = pd.DataFrame(np.array(ls).reshape(1,numEl), columns = list(df.columns))
+
+    df = df.append(newRow, ignore_index=True)
+
+    return df
+
+def init_lst_stks(nb_ticker):
+    lst = []
+    for i in range(nb_ticker):
+        lst.append(0)
+    return lst
+
+def trade_data(df_data_day, model, df_trace):
 
     turbulence_threshold = 140
     initial = True
@@ -175,10 +201,76 @@ def trade_data(df_data_day, model):
     env_trade = DummyVecEnv([lambda: StockEnvTrade(df_data_day)])
     obs_trade = env_trade.reset()
 
+    list_unique = df_data_day.datadate.unique()
 
-    for i in range(len(df_data_day.index.unique())):
+    nb_ticker = int( (len(df_trace.columns) - 4)/4)
+
+    i = 0
+    list_previous_nb_stk = init_lst_stks(nb_ticker)
+    #list_previous_price_stk = init_lst_stks(nb_ticker)
+    list_data_date = []
+    list_previous_price_stk = []
+    list_data_date.append(list_unique[i])
+    list_data_date.append(obs_trade[0][0])
+    stock_value = 0
+    for iter in range(0, nb_ticker, 1):
+        list_data_date.append(0)
+        list_data_date.append(obs_trade[0][iter + 1])
+        list_previous_price_stk.append(obs_trade[0][iter + 1])
+        list_data_date.append(obs_trade[0][iter + 1 + nb_ticker])
+        stock_value = stock_value + (obs_trade[0][iter + 1]) * (obs_trade[0][iter + 1 + nb_ticker])
+        # diff of nb stock own * actual stock price => (_nb - previous_nb) * actual stock price
+        list_data_date.append(0)  # stk_flow
+
+    list_data_date.append(stock_value)
+    list_data_date.append(stock_value + obs_trade[0][0])
+    list_data_date.append(0)  # my_rewards
+
+    df_trace = addRow(df_trace, list_data_date)
+
+
+
+    for i in range(0, len(df_data_day.index.unique()), 1):
+        list_data_date = []
+
         action, _states = model.predict(obs_trade)
         obs_trade, rewards, dones, info = env_trade.step(action)
+
         #if i == (len(trade_data.index.unique()) - 2):
         #    print(env_test.render())
         #    last_state = env_trade.render()
+
+        if dones == True:
+            total_rewards = rewards[0]
+            coef = 1
+        else:
+            total_rewards = 0
+            coef = 10000
+
+        list_data_date.append(list_unique[i])     # date
+        list_data_date.append(obs_trade[0][0] + total_rewards)    # account
+        stock_value = 0
+        for iter in range(0,nb_ticker,1):
+            list_data_date.append(action[0][iter])
+            list_data_date.append(obs_trade[0][iter + 1])
+            list_data_date.append(obs_trade[0][iter + 1 + nb_ticker])
+            # list_data_date.append(stock_flow) # stk_flow
+            stock_value = stock_value +  (obs_trade[0][iter + 1]) * (obs_trade[0][iter + 1 + nb_ticker])
+            # diff of nb stock own * actual stock price => (_nb - previous_nb) * actual stock price
+            toto = list_previous_nb_stk[iter]
+            tutu = obs_trade[0][iter + 1 + nb_ticker]
+            tata = obs_trade[0][iter + 1]
+            titi = (obs_trade[0][iter + 1 + nb_ticker] - list_previous_nb_stk[iter]) * obs_trade[0][iter + 1]
+
+            list_data_date.append((list_previous_nb_stk[iter] - obs_trade[0][iter + 1 + nb_ticker]) * list_previous_price_stk[iter])  # stk_flow
+            list_previous_nb_stk[iter] = obs_trade[0][iter + 1 + nb_ticker]
+            list_previous_price_stk[iter] = obs_trade[0][iter + 1]
+
+
+        list_data_date.append(stock_value)                       # stocks_$
+        list_data_date.append(stock_value + obs_trade[0][0] + total_rewards)     # total_val_$
+        list_data_date.append(rewards[0] * coef)    # my_rewards
+
+        df_trace = addRow(df_trace,list_data_date)
+
+    return df_trace

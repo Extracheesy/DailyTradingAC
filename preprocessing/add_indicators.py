@@ -24,7 +24,6 @@ def add_technical_indicator(df, tic):
     df['date'] = pd.to_datetime(df['date'], format = '%Y-%m-%d')
     # df['date'] = pd.to_datetime(df['date'])
 
-
     # sort by datetime
     df.sort_values(by = 'date', inplace = True, ascending = True)
 

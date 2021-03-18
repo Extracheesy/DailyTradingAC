@@ -64,7 +64,8 @@ def split_data_train_val_trade(df):
 def get_one_day_data(df, date):
 
     data = df[(df.daydate >= date) & (df.daydate <= date)]
-    data = data.sort_values(['datadate'], ignore_index=True)
+    #data = data.sort_values(['datadate'], ignore_index=True)
+    data = data.sort_values(['datadate',"tic"], ignore_index=True)
     data.index = data.datadate.factorize()[0]
     return data
 

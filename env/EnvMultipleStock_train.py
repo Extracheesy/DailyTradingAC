@@ -157,7 +157,14 @@ class StockEnvTrain(gym.Env):
             begin_total_asset = self.state[0]+ \
             sum(np.array(self.state[1:(STOCK_DIM+1)])*np.array(self.state[(STOCK_DIM+1):(STOCK_DIM*2+1)]))
             # print("begin_total_asset:{}".format(begin_total_asset))
-            
+
+            """ Test CD
+            if (self.day % 33 == 0):
+                for i in range(len(actions) - 1):
+                    actual = self.state[ STOCK_DIM + 1 + i]
+                    actions[i] = (-1) * abs(actual)
+            """
+
             argsort_actions = np.argsort(actions)
             
             sell_index = argsort_actions[:np.where(actions < 0)[0].shape[0]]

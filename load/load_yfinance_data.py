@@ -44,6 +44,14 @@ def clear_model_directory():
             print(os.getcwd())
             os.remove("./model_saved/A2C_Model/" + entry)
 
+    listOfFilesToRemove = os.listdir('./model_saved/results')
+    pattern1 = "*.csv"
+    pattern2 = "*.png"
+    for entry in listOfFilesToRemove:
+        if fnmatch.fnmatch(entry, pattern1) or fnmatch.fnmatch(entry, pattern2):
+            print("remove : ",entry)
+            os.remove("./model_saved/results/" + entry)
+
     listOfFilesToRemove = os.listdir('./model_saved/A2C_Model/results')
     pattern1 = "*.csv"
     pattern2 = "*.png"
@@ -100,6 +108,16 @@ def clear_model_directory():
             print("remove : ",entry)
             os.remove("./model_saved/TD3_Model/results/" + entry)
 
+def clear_result_directory():
+
+    listOfFilesToRemove = os.listdir('./model_saved/results')
+    pattern1 = "*.csv"
+    pattern2 = "*.png"
+    for entry in listOfFilesToRemove:
+        if fnmatch.fnmatch(entry, pattern1) or fnmatch.fnmatch(entry, pattern2):
+            print("remove : ",entry)
+            os.remove("./model_saved/results/" + entry)
+
 def mk_directories():
 
     if not os.path.exists("./data"):
@@ -109,6 +127,7 @@ def mk_directories():
 
     if not os.path.exists("./model_saved"):
         os.makedirs("./model_saved")
+        os.makedirs("./model_saved/results")
 
     if not os.path.exists("./model_saved/A2C_Model"):
         os.makedirs("./model_saved/A2C_Model")
