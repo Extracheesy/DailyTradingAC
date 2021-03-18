@@ -67,6 +67,8 @@ def add_technical_indicator(df, tic):
     df.insert(len(df.columns), "-DI",0)
 
     len_df = len(df)
+
+    # CD Comment change the for by optimized solution
     for i in range(0,len_df,1):
 
         df.loc[i,"daydate"] = str(df.iloc[i]["date"])[0:10]
